@@ -1,3 +1,8 @@
+import org.gradle.api.plugins.quality.Checkstyle
+import org.gradle.api.plugins.quality.Pmd
+import org.gradle.testing.jacoco.tasks.JacocoCoverageVerification
+import org.gradle.testing.jacoco.tasks.JacocoReport
+
 plugins {
     java
     id("org.springframework.boot") version "4.1.2"
@@ -26,8 +31,8 @@ extra["springModulithVersion"] = "2.1.1"
 dependencies {
     implementation("org.springframework.modulith:spring-modulith-starter-core")
     compileOnly("org.projectlombok:lombok")
-    developmentOnly("org.springframework.boot:spring-boot-docker-compose")
     annotationProcessor("org.projectlombok:lombok")
+    developmentOnly("org.springframework.boot:spring-boot-docker-compose")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.modulith:spring-modulith-starter-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
@@ -35,12 +40,29 @@ dependencies {
 
 dependencyManagement {
     imports {
-        mavenBom("org.springframework.modulith:spring-modulith-bom:${property("springModulithVersion")}")
+        mavenBom(
+            "org.springframework.modulith:spring-modulith-bom:" +
+                    property("springModulithVersion")
+        )
     }
 }
 
-tasks.withType<Test> {
+tasks.withType<Test>().configureEach {
     useJUnitPlatform()
+
+    reports {
+        junitXml.required.set(true)
+        html.required.set(true)
+    }
+
+    testLogging {
+        events("failed", "skipped")
+        exceptionFormat =
+            org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+    }
+}
+
+tasks.test {
     finalizedBy(tasks.named("jacocoTestReport"))
 }
 
@@ -52,14 +74,38 @@ tasks.named<JacocoReport>("jacocoTestReport") {
     dependsOn(tasks.test)
 
     reports {
-        xml.required = true
-        html.required = true
-        csv.required = false
+        xml.required.set(true)
+        html.required.set(true)
+        csv.required.set(false)
     }
 }
 
-tasks.named("check") {
-    dependsOn("jacocoTestReport")
+tasks.named<JacocoCoverageVerification>("jacocoTestCoverageVerification") {
+    dependsOn(tasks.test)
+
+    violationRules {
+        rule {
+            element = "BUNDLE"
+
+            limit {
+                counter = "LINE"
+                value = "COVEREDRATIO"
+                minimum = "0.80".toBigDecimal()
+            }
+
+            limit {
+                counter = "BRANCH"
+                value = "COVEREDRATIO"
+                minimum = "0.80".toBigDecimal()
+            }
+
+            limit {
+                counter = "INSTRUCTION"
+                value = "COVEREDRATIO"
+                minimum = "0.80".toBigDecimal()
+            }
+        }
+    }
 }
 
 checkstyle {
@@ -68,14 +114,45 @@ checkstyle {
 
     isIgnoreFailures = false
     isShowViolations = true
+
+    maxErrors = 0
+    maxWarnings = 0
+}
+
+tasks.withType<Checkstyle>().configureEach {
+    group = "verification"
+
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
 }
 
 pmd {
-    isConsoleOutput = true
     toolVersion = "7.16.0"
+
+    isConsoleOutput = true
+    isIgnoreFailures = false
+
     rulesMinimumPriority = 5
+    maxFailures.set(0)
 
     ruleSetFiles = files("config/pmd/pmd.xml")
     ruleSets = emptyList()
-    isIgnoreFailures = false
+}
+
+tasks.withType<Pmd>().configureEach {
+    group = "verification"
+
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+}
+
+tasks.named("check") {
+    dependsOn(
+        "jacocoTestReport",
+        "jacocoTestCoverageVerification"
+    )
 }

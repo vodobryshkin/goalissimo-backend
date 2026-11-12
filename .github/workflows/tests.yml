@@ -1,0 +1,71 @@
+name: tests.yml
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Tests and coverage >= 80%
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    env:
+      SPRING_DOCKER_COMPOSE_ENABLED: "false"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v6.2.0
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6.4.1
+        with:
+          cache-provider: basic
+          validate-wrappers: true
+
+      - name: Run tests and verify coverage
+        run: >-
+          ./gradlew
+          test
+          jacocoTestReport
+          jacocoTestCoverageVerification
+          --no-daemon
+          --continue
+          --stacktrace
+          --console=plain
+
+      - name: Verify coverage report exists
+        run: |
+          report="build/reports/jacoco/test/jacocoTestReport.xml"
+          if [ ! -s "$report" ]; then
+            echo "::error::JaCoCo coverage report is missing or empty."
+            exit 1
+          fi
+
+      - name: Upload test and coverage reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: test-and-coverage-reports
+          path: |
+            build/reports/tests/
+            build/reports/jacoco/
+            build/test-results/test/
+          if-no-files-found: warn
+          retention-days: 14

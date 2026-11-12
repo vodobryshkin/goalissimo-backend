@@ -1,0 +1,60 @@
+name: code-quality.yml
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  code-quality:
+    name: Checkstyle and PMD
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v6.2.0
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6.4.1
+        with:
+          cache-provider: basic
+          validate-wrappers: true
+
+      - name: Run Checkstyle and PMD
+        run: >-
+          ./gradlew
+          checkstyleMain
+          checkstyleTest
+          pmdMain
+          pmdTest
+          --no-daemon
+          --continue
+          --stacktrace
+          --console=plain
+
+      - name: Upload code quality reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: code-quality-reports
+          path: |
+            build/reports/checkstyle/
+            build/reports/pmd/
+          if-no-files-found: warn
+          retention-days: 14
