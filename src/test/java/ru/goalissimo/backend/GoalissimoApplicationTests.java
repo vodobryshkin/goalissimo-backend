@@ -9,7 +9,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Класс тестов для приложения Goalissimo.
  */
-@SpringBootTest
+@SpringBootTest(useMainMethod = SpringBootTest.UseMainMethod.ALWAYS)
 class GoalissimoApplicationTests {
 
     /**
