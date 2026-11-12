@@ -7,6 +7,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * Главный класс Spring Boot приложения Goalissimo.
  */
 @SpringBootApplication
+@SuppressWarnings("PMD.UseUtilityClass")
 public class GoalissimoApplication {
     /**
      * Точка входа в приложение.

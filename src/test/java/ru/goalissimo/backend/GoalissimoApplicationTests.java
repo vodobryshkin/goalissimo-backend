@@ -1,10 +1,10 @@
 package ru.goalissimo.backend;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ConfigurableApplicationContext;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Класс тестов для приложения Goalissimo.
