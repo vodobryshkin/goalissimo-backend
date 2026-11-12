@@ -1,0 +1,62 @@
+name: pr-size.yml
+
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - synchronize
+      - reopened
+      - ready_for_review
+
+permissions:
+  pull-requests: read
+
+concurrency:
+  group: pr-size-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  pr-size:
+    name: PR size
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+
+    steps:
+      - name: Проверить лимит изменённых строк
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              ...context.repo,
+              pull_number: context.issue.number
+            });
+
+            const limit = 1000;
+            const total = pr.additions + pr.deletions;
+
+            await core.summary
+              .addHeading("Размер PR")
+              .addTable([
+                [
+                  { data: "Показатель", header: true },
+                  { data: "Строк", header: true }
+                ],
+                ["Добавлено", String(pr.additions)],
+                ["Удалено", String(pr.deletions)],
+                ["Всего", String(total)],
+                ["Лимит", String(limit)]
+              ])
+              .write();
+
+            if (total > limit) {
+              core.setFailed(
+                "PR содержит " + total +
+                " изменённых строк при лимите " + limit +
+                ". Разделите изменения на несколько последовательных PR."
+              );
+            } else {
+              core.info(
+                "Размер PR: " + total + "/" + limit + " строк."
+              );
+            }
