@@ -2,6 +2,9 @@ plugins {
     java
     id("org.springframework.boot") version "4.1.2"
     id("io.spring.dependency-management") version "1.1.7"
+    id("checkstyle")
+    id("pmd")
+    id("jacoco")
 }
 
 group = "ru.goalissimo"
@@ -27,9 +30,7 @@ dependencies {
     annotationProcessor("org.projectlombok:lombok")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.modulith:spring-modulith-starter-test")
-    testCompileOnly("org.projectlombok:lombok")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testAnnotationProcessor("org.projectlombok:lombok")
 }
 
 dependencyManagement {
@@ -40,4 +41,41 @@ dependencyManagement {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    finalizedBy(tasks.named("jacocoTestReport"))
+}
+
+jacoco {
+    toolVersion = "0.8.13"
+}
+
+tasks.named<JacocoReport>("jacocoTestReport") {
+    dependsOn(tasks.test)
+
+    reports {
+        xml.required = true
+        html.required = true
+        csv.required = false
+    }
+}
+
+tasks.named("check") {
+    dependsOn("jacocoTestReport")
+}
+
+checkstyle {
+    toolVersion = "14.1.0"
+    configFile = file("config/checkstyle/checkstyle.xml")
+
+    isIgnoreFailures = false
+    isShowViolations = true
+}
+
+pmd {
+    isConsoleOutput = true
+    toolVersion = "7.16.0"
+    rulesMinimumPriority = 5
+
+    ruleSetFiles = files("config/pmd/pmd.xml")
+    ruleSets = emptyList()
+    isIgnoreFailures = false
 }
