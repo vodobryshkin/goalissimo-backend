@@ -1,6 +1,7 @@
 name: Сообщение об ошибке
 description: Неправильное поведение приложения или сбой.
 title: "[Ошибка]: "
+labels: ["bug"]
 
 body:
   - type: textarea

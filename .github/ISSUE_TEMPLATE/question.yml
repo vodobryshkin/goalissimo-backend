@@ -1,0 +1,40 @@
+name: Вопрос
+description: Вопрос по архитектуре, коду или работе проекта.
+title: "[Вопрос]: "
+labels: ["question"]
+
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Вопрос
+      description: Сформулируйте, что нужно выяснить.
+      placeholder: Как разграничить ответственность JPA и jOOQ в проекте?
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Контекст
+      description: |
+        Опишите задачу, в рамках которой возник вопрос.
+        При необходимости добавьте ссылки на код, документацию или issues.
+    validations:
+      required: true
+
+  - type: textarea
+    id: attempts
+    attributes:
+      label: Что уже изучено
+      description: Какие варианты рассматривали и что осталось непонятным?
+    validations:
+      required: false
+
+  - type: textarea
+    id: materials
+    attributes:
+      label: Дополнительные материалы
+      description: Фрагменты кода, схемы, примеры или скриншоты.
+    validations:
+      required: false

@@ -1,6 +1,7 @@
 name: Новая функциональность
 description: Добавление нового поведения системы.
 title: "[Функциональность]: "
+labels: ["enhancement"]
 
 body:
   - type: textarea
