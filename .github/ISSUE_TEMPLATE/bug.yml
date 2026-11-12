@@ -1,0 +1,56 @@
+name: Сообщение об ошибке
+description: Неправильное поведение приложения или сбой.
+title: "[Ошибка]: "
+
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Что произошло
+      description: Опишите проблему и её влияние.
+      placeholder: При повторной регистрации команды сервер возвращает HTTP 500.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Как воспроизвести
+      description: Укажите последовательность действий, запросы и входные данные.
+      placeholder: |
+        1. Создать турнир.
+        2. Зарегистрировать команду.
+        3. Повторно отправить тот же запрос.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Ожидаемый результат
+      placeholder: Сервер возвращает HTTP 409 с объяснением причины.
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Окружение
+      description: Укажите коммит или версию, способ запуска и значимые настройки.
+      placeholder: |
+        Коммит:
+        Запуск: локально / Docker / CI
+        Java:
+        PostgreSQL:
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Логи и дополнительные материалы
+      description: |
+        Приложите относящийся к ошибке фрагмент журнала или скриншот.
+        Удалите пароли, токены и персональные данные.
+    validations:
+      required: false

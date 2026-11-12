@@ -1,0 +1,55 @@
+name: Техническая задача
+description: Изменение внутреннего устройства проекта или процесса разработки.
+title: "[Задача]: "
+
+body:
+  - type: dropdown
+    id: category
+    attributes:
+      label: Тип задачи
+      options:
+        - Рефакторинг
+        - Тестирование
+        - CI и сборка
+        - База данных
+        - Зависимости
+        - Документация
+        - Другое
+    validations:
+      required: true
+
+  - type: textarea
+    id: purpose
+    attributes:
+      label: Зачем это нужно
+      description: Опишите текущую проблему и пользу изменения.
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Что нужно сделать
+      description: Укажите объём работ и затрагиваемые компоненты.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Критерии готовности
+      description: Как проверим, что задача выполнена?
+      placeholder: |
+        - Изменение реализовано.
+        - Описанный сценарий проверки проходит.
+        - Обновлена затронутая документация.
+    validations:
+      required: true
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Зависимости и связанные задачи
+      description: Что должно быть сделано раньше? Какие issues связаны с этой?
+    validations:
+      required: false

@@ -1,0 +1,44 @@
+name: Новая функциональность
+description: Добавление нового поведения системы.
+title: "[Функциональность]: "
+
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Какую проблему решаем
+      description: Кто столкнулся с проблемой и чего сейчас не хватает?
+      placeholder: Организатору нужно создавать турнир и задавать сроки регистрации.
+    validations:
+      required: true
+
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Предлагаемое поведение
+      description: Опишите сценарий использования и ограничения.
+      placeholder: |
+        Организатор задаёт название и даты турнира.
+        Система проверяет даты и сохраняет турнир.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Критерии готовности
+      description: Перечислите проверяемые условия завершения задачи.
+      placeholder: |
+        - Авторизованный организатор может создать турнир.
+        - Некорректные даты отклоняются.
+        - Добавлены тесты успешного создания и ошибок валидации.
+    validations:
+      required: true
+
+  - type: textarea
+    id: references
+    attributes:
+      label: Связанные материалы
+      description: Ссылки на требования, API, макеты или другие issues.
+    validations:
+      required: false
