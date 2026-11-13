@@ -2,6 +2,14 @@ import org.gradle.api.plugins.quality.Checkstyle
 import org.gradle.api.plugins.quality.Pmd
 import org.gradle.testing.jacoco.tasks.JacocoCoverageVerification
 import org.gradle.testing.jacoco.tasks.JacocoReport
+import org.gradle.api.plugins.JavaPluginExtension
+import org.gradle.api.plugins.quality.CheckstyleExtension
+import org.gradle.api.plugins.quality.PmdExtension
+import org.gradle.api.tasks.SourceSetContainer
+import org.gradle.api.tasks.testing.Test
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.gradle.testing.jacoco.plugins.JacocoPluginExtension
+import org.gradle.testing.jacoco.tasks.JacocoReportBase
 
 plugins {
     java
@@ -44,6 +52,11 @@ dependencies { implementation("org.springframework.boot:spring-boot-starter-secu
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     runtimeOnly("org.postgresql:postgresql")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    implementation(project(":users-api"))
+    implementation(project(":users-spi"))
+    implementation(project(":users-core"))
+    implementation(project(":users-adapter-web"))
+    implementation(project(":users-adapter-jpa"))
 }
 
 tasks.withType<Test>().configureEach {
@@ -154,6 +167,12 @@ tasks.named("check") {
         "jacocoTestReport",
         "jacocoTestCoverageVerification"
     )
+
+    dependsOn(
+        subprojects.map { project ->
+            project.tasks.named("check")
+        }
+    )
 }
 
 smartdoc {
@@ -162,4 +181,156 @@ smartdoc {
 
 tasks.named("build") {
     dependsOn("smartDocOpenApi")
+}
+
+subprojects {
+    apply(plugin = "java-library")
+    apply(plugin = "checkstyle")
+    apply(plugin = "pmd")
+    apply(plugin = "jacoco")
+
+    group = rootProject.group
+    version = rootProject.version
+
+    repositories {
+        mavenCentral()
+    }
+
+    extensions.configure<JavaPluginExtension> {
+        toolchain {
+            languageVersion.set(JavaLanguageVersion.of(21))
+        }
+    }
+
+    dependencies {
+        add(
+            "implementation",
+            platform(
+                "org.springframework.boot:" +
+                        "spring-boot-dependencies:4.1.2"
+            )
+        )
+
+        add(
+            "testImplementation",
+            "org.junit.jupiter:junit-jupiter"
+        )
+        add(
+            "testImplementation",
+            "org.assertj:assertj-core"
+        )
+        add(
+            "testRuntimeOnly",
+            "org.junit.platform:junit-platform-launcher"
+        )
+    }
+
+    tasks.withType<Test>().configureEach {
+        useJUnitPlatform()
+
+        reports {
+            junitXml.required.set(true)
+            html.required.set(true)
+        }
+
+        testLogging {
+            events("failed", "skipped")
+            exceptionFormat = TestExceptionFormat.FULL
+        }
+    }
+
+    extensions.configure<CheckstyleExtension> {
+        toolVersion = "14.1.0"
+
+        configFile = rootProject.file(
+            "config/checkstyle/checkstyle.xml"
+        )
+
+        isIgnoreFailures = false
+        isShowViolations = true
+
+        maxErrors = 0
+        maxWarnings = 0
+    }
+
+    tasks.withType<Checkstyle>().configureEach {
+        group = "verification"
+
+        reports {
+            xml.required.set(true)
+            html.required.set(true)
+        }
+    }
+
+    extensions.configure<PmdExtension> {
+        toolVersion = "7.16.0"
+
+        isConsoleOutput = true
+        isIgnoreFailures = false
+
+        rulesMinimumPriority = 5
+        maxFailures.set(0)
+
+        ruleSetFiles = rootProject.files(
+            "config/pmd/pmd.xml"
+        )
+        ruleSets = emptyList()
+    }
+
+    tasks.withType<Pmd>().configureEach {
+        group = "verification"
+
+        reports {
+            xml.required.set(true)
+            html.required.set(true)
+        }
+    }
+
+    extensions.configure<JacocoPluginExtension> {
+        toolVersion = "0.8.13"
+    }
+}
+
+val coverageProjects = allprojects.toList()
+
+val coverageTests = coverageProjects.map { project ->
+    project.tasks.named<Test>("test")
+}
+
+val coverageMainSources = coverageProjects.map { project ->
+    project.extensions
+        .getByType<SourceSetContainer>()
+        .getByName("main")
+}
+
+val coverageData = files(
+    coverageProjects.map { project ->
+        project.layout.buildDirectory.file("jacoco/test.exec")
+    }
+).filter { it.isFile }
+
+val verifyCoverageData = tasks.register("verifyCoverageData") {
+    group = "verification"
+
+    dependsOn(coverageTests)
+
+    doLast {
+        check(coverageData.files.isNotEmpty()) {
+            "Нет данных JaCoCo: проверь, что тесты были выполнены."
+        }
+    }
+}
+
+tasks.withType<JacocoReportBase>().configureEach {
+    dependsOn(verifyCoverageData)
+
+    executionData.setFrom(coverageData)
+
+    classDirectories.setFrom(
+        coverageMainSources.map { it.output.classesDirs }
+    )
+
+    sourceDirectories.setFrom(
+        coverageMainSources.map { it.allJava.srcDirs }
+    )
 }
