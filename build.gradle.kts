@@ -10,6 +10,7 @@ plugins {
     id("checkstyle")
     id("pmd")
     id("jacoco")
+    id("com.github.shalousun.smart-doc") version "4.0.0"
 }
 
 group = "ru.goalissimo"
@@ -167,4 +168,12 @@ tasks.named("check") {
         "jacocoTestReport",
         "jacocoTestCoverageVerification"
     )
+}
+
+smartdoc {
+    configFile = file("src/main/resources/smart-doc.json")
+}
+
+tasks.named("build") {
+    dependsOn("smartDocOpenApi")
 }
