@@ -56,5 +56,7 @@ jobs:
           path: |
             build/reports/checkstyle/
             build/reports/pmd/
+            users/*/build/reports/checkstyle/
+            users/*/build/reports/pmd/
           if-no-files-found: warn
           retention-days: 14
