@@ -1,17 +1,11 @@
 rootProject.name = "backend"
 
-val usersModules = listOf(
-    "users-api",
+include(
     "users-domain",
-    "users-spi",
-    "users-core",
-    "users-adapter-web",
-    "users-adapter-jpa"
+    "users-application",
+    "users-infrastructure"
 )
 
-usersModules.forEach { moduleName ->
-    include(moduleName)
-
-    project(":$moduleName").projectDir =
-        file("users/$moduleName")
-}
+project(":users-domain").projectDir = file("users/domain")
+project(":users-application").projectDir = file("users/application")
+project(":users-infrastructure").projectDir = file("users/infrastructure")

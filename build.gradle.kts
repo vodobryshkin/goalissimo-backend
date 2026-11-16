@@ -21,7 +21,7 @@ plugins {
     id("pmd")
     id("jacoco")
 
-    id("com.github.shalousun.smart-doc") version "4.0.0"
+    id("com.github.shalousun.smart-doc") version "4.0.0" apply false
 }
 
 group = "ru.goalissimo"
@@ -140,38 +140,16 @@ allprojects {
     }
 }
 
-configure(
-    subprojects.filter { project ->
-        project.name.startsWith("users-adapter-")
-    }
-) {
-    dependencies {
-        add(
-            "implementation",
-            "org.springframework.boot:spring-boot-starter"
-        )
-    }
-}
-
 dependencies {
-    implementation(project(":users-api"))
-    implementation(project(":users-spi"))
-    implementation(project(":users-core"))
-    implementation(project(":users-adapter-web"))
-    implementation(project(":users-adapter-jpa"))
+    implementation(project(":users-domain"))
+    implementation(project(":users-application"))
+    implementation(project(":users-infrastructure"))
 
-    implementation("org.springframework.boot:spring-boot-starter-security")
-    implementation("org.springframework.boot:spring-boot-starter-webmvc")
-    implementation("org.springframework.boot:spring-boot-starter-jooq")
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    implementation("org.springframework.boot:spring-boot-starter-validation")
-    implementation("org.springframework.boot:spring-boot-starter-liquibase")
+    implementation("org.springframework.boot:spring-boot-starter")
 
     developmentOnly(
         "org.springframework.boot:spring-boot-docker-compose"
     )
-
-    runtimeOnly("org.postgresql:postgresql")
 
     testImplementation(
         "org.springframework.boot:spring-boot-starter-test"
@@ -270,13 +248,14 @@ tasks.named<JacocoCoverageVerification>(
         rule {
             element = "BUNDLE"
 
-            listOf("LINE", "BRANCH", "INSTRUCTION").forEach { coverageCounter ->
-                limit {
-                    counter = coverageCounter
-                    value = "COVEREDRATIO"
-                    minimum = "0.80".toBigDecimal()
+            listOf("LINE", "BRANCH", "INSTRUCTION")
+                .forEach { coverageCounter ->
+                    limit {
+                        counter = coverageCounter
+                        value = "COVEREDRATIO"
+                        minimum = "0.80".toBigDecimal()
+                    }
                 }
-            }
         }
     }
 }
@@ -298,10 +277,13 @@ tasks.named("check") {
     )
 }
 
-smartdoc {
-    configFile = file("src/main/resources/smart-doc.json")
+val smartDocOpenApi = tasks.register("smartDocOpenApi") {
+    group = "documentation"
+    description = "Генерирует OpenAPI для инфраструктурного модуля."
+
+    dependsOn(":users-infrastructure:smartDocOpenApi")
 }
 
 tasks.named("build") {
-    dependsOn("smartDocOpenApi")
+    dependsOn(smartDocOpenApi)
 }
