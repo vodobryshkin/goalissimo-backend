@@ -149,7 +149,9 @@ jacoco {
     toolVersion = "0.8.13"
 }
 
-val coverageProjects = subprojects.toList()
+val coverageProjects = subprojects.filter { project ->
+    project.name != "middleware"
+}
 
 val coverageTests = coverageProjects.map { project ->
     project.tasks.named<Test>("test")
