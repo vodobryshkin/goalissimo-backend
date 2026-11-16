@@ -9,6 +9,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 @SuppressWarnings("PMD.UseUtilityClass")
 public class GoalissimoApplication {
+
     /**
      * Точка входа в приложение.
      *
@@ -17,5 +18,4 @@ public class GoalissimoApplication {
     public static void main(String[] args) {
         SpringApplication.run(GoalissimoApplication.class, args);
     }
-
 }

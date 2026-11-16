@@ -4,12 +4,11 @@ plugins {
 }
 
 dependencies {
+    implementation(project(":middleware"))
+
     implementation(project(":users-domain"))
     implementation(project(":users-application"))
 
-    implementation(
-        "org.springframework.boot:spring-boot-starter-security"
-    )
     implementation(
         "org.springframework.boot:spring-boot-starter-webmvc"
     )
@@ -38,7 +37,7 @@ dependencies {
 
 smartdoc {
     configFile = rootProject.file(
-        "src/main/resources/smart-doc.json"
+        "bootstrap/src/main/resources/smart-doc.json"
     )
 }
 
