@@ -12,14 +12,11 @@ import org.gradle.testing.jacoco.tasks.JacocoReport
 import org.gradle.testing.jacoco.tasks.JacocoReportBase
 
 plugins {
-    java
+    base
+    jacoco
 
-    id("org.springframework.boot") version "4.1.2"
-    id("io.spring.dependency-management") version "1.1.7"
-
-    id("checkstyle")
-    id("pmd")
-    id("jacoco")
+    id("org.springframework.boot") version "4.1.2" apply false
+    id("io.spring.dependency-management") version "1.1.7" apply false
 
     id("com.github.shalousun.smart-doc") version "4.0.0" apply false
 }
@@ -32,20 +29,24 @@ val springBootBom =
     "org.springframework.boot:spring-boot-dependencies:4.1.2"
 
 allprojects {
-    if (this != rootProject) {
-        apply(plugin = "java-library")
-    }
-
-    apply(plugin = "checkstyle")
-    apply(plugin = "pmd")
-    apply(plugin = "jacoco")
-
     group = rootProject.group
     version = rootProject.version
 
     repositories {
         mavenCentral()
     }
+}
+
+subprojects {
+    if (name == "bootstrap") {
+        apply(plugin = "java")
+    } else {
+        apply(plugin = "java-library")
+    }
+
+    apply(plugin = "checkstyle")
+    apply(plugin = "pmd")
+    apply(plugin = "jacoco")
 
     extensions.configure<JavaPluginExtension> {
         toolchain {
@@ -54,17 +55,21 @@ allprojects {
     }
 
     dependencies {
+        // BOM управляет версиями, но не добавляет Spring в модули.
         add("implementation", platform(springBootBom))
 
         add("annotationProcessor", platform(springBootBom))
         add("testAnnotationProcessor", platform(springBootBom))
 
+        // Lombok для основного кода.
         add("compileOnly", "org.projectlombok:lombok")
         add("annotationProcessor", "org.projectlombok:lombok")
 
+        // Lombok для тестов.
         add("testCompileOnly", "org.projectlombok:lombok")
         add("testAnnotationProcessor", "org.projectlombok:lombok")
 
+        // Общие зависимости тестов.
         add("testImplementation", "org.junit.jupiter:junit-jupiter")
         add("testImplementation", "org.assertj:assertj-core")
 
@@ -140,35 +145,13 @@ allprojects {
     }
 }
 
-dependencies {
-    implementation(project(":users-domain"))
-    implementation(project(":users-application"))
-    implementation(project(":users-infrastructure"))
-
-    implementation("org.springframework.boot:spring-boot-starter")
-
-    developmentOnly(
-        "org.springframework.boot:spring-boot-docker-compose"
-    )
-
-    testImplementation(
-        "org.springframework.boot:spring-boot-starter-test"
-    )
-    testImplementation(
-        "org.springframework.boot:spring-boot-testcontainers"
-    )
-    testImplementation(
-        "org.springframework.security:spring-security-test"
-    )
-    testImplementation(
-        "org.testcontainers:testcontainers-junit-jupiter"
-    )
-    testImplementation(
-        "org.testcontainers:testcontainers-postgresql"
-    )
+jacoco {
+    toolVersion = "0.8.13"
 }
 
-val coverageProjects = allprojects.toList()
+val coverageProjects = subprojects.filter { project ->
+    project.name != "middleware"
+}
 
 val coverageTests = coverageProjects.map { project ->
     project.tasks.named<Test>("test")
@@ -217,8 +200,11 @@ tasks.withType<JacocoReportBase>().configureEach {
     )
 }
 
-tasks.named<JacocoReport>("jacocoTestReport") {
-    description = "Создаёт общий отчёт покрытия всех проектов."
+val jacocoTestReport = tasks.register<JacocoReport>(
+    "jacocoTestReport"
+) {
+    group = "verification"
+    description = "Создаёт общий отчёт покрытия всех модулей."
 
     reports {
         xml.required.set(true)
@@ -239,40 +225,53 @@ tasks.named<JacocoReport>("jacocoTestReport") {
     }
 }
 
-tasks.named<JacocoCoverageVerification>(
-    "jacocoTestCoverageVerification"
-) {
-    description = "Проверяет общее покрытие: минимум 80%."
+val jacocoTestCoverageVerification =
+    tasks.register<JacocoCoverageVerification>(
+        "jacocoTestCoverageVerification"
+    ) {
+        group = "verification"
+        description = "Проверяет общее покрытие: минимум 80%."
 
-    violationRules {
-        rule {
-            element = "BUNDLE"
+        dependsOn(jacocoTestReport)
 
-            listOf("LINE", "BRANCH", "INSTRUCTION")
-                .forEach { coverageCounter ->
-                    limit {
-                        counter = coverageCounter
-                        value = "COVEREDRATIO"
-                        minimum = "0.80".toBigDecimal()
+        violationRules {
+            rule {
+                element = "BUNDLE"
+
+                listOf("LINE", "BRANCH", "INSTRUCTION")
+                    .forEach { coverageCounter ->
+                        limit {
+                            counter = coverageCounter
+                            value = "COVEREDRATIO"
+                            minimum = "0.80".toBigDecimal()
+                        }
                     }
-                }
+            }
         }
     }
-}
-
-tasks.named<Test>("test") {
-    finalizedBy(tasks.named("jacocoTestReport"))
-}
 
 tasks.named("check") {
-    dependsOn(
-        tasks.named("jacocoTestReport"),
-        tasks.named("jacocoTestCoverageVerification")
-    )
+    dependsOn(jacocoTestCoverageVerification)
 
     dependsOn(
         subprojects.map { project ->
             project.tasks.named("check")
+        }
+    )
+}
+
+tasks.named("assemble") {
+    dependsOn(
+        subprojects.map { project ->
+            project.tasks.named("assemble")
+        }
+    )
+}
+
+tasks.named("clean") {
+    dependsOn(
+        subprojects.map { project ->
+            project.tasks.named("clean")
         }
     )
 }

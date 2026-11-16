@@ -45,6 +45,7 @@ jobs:
           test
           :jacocoTestReport
           :jacocoTestCoverageVerification
+          -x :middleware:test
           --no-daemon
           --continue
           --stacktrace
@@ -64,10 +65,8 @@ jobs:
         with:
           name: test-and-coverage-reports
           path: |
-            build/reports/tests/
             build/reports/jacoco/
-            build/test-results/test/
-            users/*/build/reports/tests/
-            users/*/build/test-results/test/
+            **/build/reports/tests/
+            **/build/test-results/test/
           if-no-files-found: warn
           retention-days: 14
