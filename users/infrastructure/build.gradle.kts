@@ -3,11 +3,17 @@ plugins {
     id("com.github.shalousun.smart-doc")
 }
 
+val mapstructVersion = "1.6.3"
+
 dependencies {
     implementation(project(":middleware"))
 
     implementation(project(":users-domain"))
     implementation(project(":users-application"))
+
+    implementation("org.mapstruct:mapstruct:$mapstructVersion")
+    annotationProcessor("org.mapstruct:mapstruct-processor:$mapstructVersion")
+    annotationProcessor("org.projectlombok:lombok-mapstruct-binding:0.2.0")
 
     implementation(
         "org.springframework.boot:spring-boot-starter-webmvc"
@@ -24,7 +30,9 @@ dependencies {
     implementation(
         "org.springframework.boot:spring-boot-starter-liquibase"
     )
+    implementation("org.springframework.security:spring-security-crypto")
 
+    runtimeOnly("org.bouncycastle:bcprov-jdk18on:1.87")
     runtimeOnly("org.postgresql:postgresql")
 
     testImplementation(
